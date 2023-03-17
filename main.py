@@ -5,6 +5,8 @@ import numpy
 import os
 import requests
 
+# TODO Prompt user for stock symbol and automatically return price and news
+# TODO Create a GUI
 
 # Constants
 dotenv.load_dotenv()
@@ -17,10 +19,10 @@ NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 
 
 # Variables
-stocks_function = "TIME_SERIES_DAILY_ADJUSTED"
-stocks_symbol = "AAPL"
-stocks_params = {"function": stocks_function,
-          "symbol": stocks_symbol,
+stock_function = "TIME_SERIES_DAILY_ADJUSTED"
+stock_symbol = "AAPL"
+stock_params = {"function": stock_function,
+          "symbol": stock_symbol,
           "apikey": ALPHA_VANTAGE_API_KEY,
           }
 
@@ -43,7 +45,7 @@ yesterday_str = yesterday_date.strftime("%Y-%m-%d")
 # Functions
 def request_stock_info() -> dict:
     response = requests.get(ALPHA_VANTAGE_ENDPOINT,
-                            params=stocks_params)
+                            params=stock_params)
     response.raise_for_status()
     return response.json()["Time Series (Daily)"][yesterday_str]
 
@@ -58,10 +60,7 @@ def add_positive_sign(price) -> str:
 
 def extract_headlines(news_response_dict) -> list:
     list = news_response_dict["articles"]
-    list_headlines = []
-    for i in list:
-        list_headlines.append(i["title"])
-    return list_headlines
+    return [article["title"] for article in list]
 
 def print_headlines(list_headlines) -> None:
     index = 0
@@ -79,19 +78,21 @@ def main() -> None:
    close_price = float(stocks_response_dict["4. close"])
    difference_price = numpy.around(close_price - low_price, 2)
    difference_price_str = add_positive_sign(difference_price)
+   difference_percent = numpy.around(difference_price / close_price, 3) * 100
+   difference_percent_str = add_positive_sign(difference_percent)
    
-   print(f"\nExchange for {stocks_symbol} on {yesterday_str}\n"
+   print(f"\nExchange for {stock_symbol} on {yesterday_str}\n"
          f"Open: {open_price}\n"
          f"Close: {close_price}\n"
          f"High: {high_price}\n"
          f"Low: {low_price}\n"
-         f"Diff: {difference_price_str}\n\n"
+         f"Diff: {difference_price_str} || {difference_percent_str}%\n\n"
          )
    
    list_headlines = extract_headlines(news_response_dict)
    news_total_results = news_response_dict["totalResults"]
    
-   print(f"Headlines for {stocks_symbol}:\n"
+   print(f"Headlines for {stock_symbol}:\n"
          f"Total Results: {news_total_results}\n")
    print_headlines(list_headlines)
    
